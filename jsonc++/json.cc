@@ -78,11 +78,13 @@ basic_value::basic_value(basic_value&& rhs) {
 }
 
 basic_value& basic_value::operator=(basic_value&& rhs) {
-    destory();
-    value_ = rhs.value_;
-    type_ = rhs.type_;
-    rhs.value_ = {};
-    rhs.type_ = value_t::null;
+    if (this != &rhs) {
+        destory();
+        value_ = rhs.value_;
+        type_ = rhs.type_;
+        rhs.value_ = {};
+        rhs.type_ = value_t::null;
+    }
     return *this;
 }
 
@@ -328,5 +330,17 @@ void basic_value::destory() {
     type_ = value_t::null;
 }
 
+
+basic_value::iterator basic_value::begin() noexcept {
+    iterator result(this);
+    result.set_begin();
+    return result;
+}
+
+basic_value::iterator basic_value::end() noexcept {
+    iterator result(this);
+    result.set_end();
+    return result;
+}
 
 } // namespace json

@@ -18,4 +18,20 @@ int main() {
     std::cout << value["num_int"].as_int() << std::endl;
     std::cout << value["num_uint"].as_uint() << std::endl;
     std::cout << value["num_real"].as_string() << std::endl;
+
+    for (auto& val : value["array"]) {
+        std::cout << val.as_string() << std::endl;
+    }
+
+    value["map"]["1"] = 1;
+    value["map"]["two"] = 2.0f;
+    value["map"]["three"] = 3u;
+    value["map"]["json"] = "json";
+    value["map"]["boolean"] = true;
+
+    auto& map = value["map"];
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        std::cout << it.key() << " - " << it->as_string() << std::endl;
+    }
+
 }

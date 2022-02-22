@@ -1,27 +1,18 @@
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
 #include <vector>
 #include <string>
 #include <map>
 
+#include "value_t.h"
 #include "iter_impl.h"
 
 namespace json {
 
-enum class value_t : std::uint8_t {
-    null,
-    object,
-    array,
-    string,
-    boolean,
-    number_int,
-    number_uint,
-    number_real,
-};
-
 class basic_value {
+    template <typename BasicJsonType>
+    friend class iter::impl;
 public:
     using value_type = basic_value;
     using reference  = value_type&;
@@ -33,6 +24,9 @@ public:
 
     template <class T>
     using AllocatorType = std::allocator<T>;
+    using allocator_type = AllocatorType<basic_value>;
+    using pointer = std::allocator_traits<allocator_type>::pointer;
+    using const_pointer = std::allocator_traits<allocator_type>::const_pointer;
 
     using object_t    = std::map<std::string, basic_value, std::less<>, 
                         AllocatorType<std::pair<const std::string, basic_value>>>;
@@ -94,8 +88,20 @@ public:
     reference emplace_back(Args&&... args);
 
     template <class... Args>
-    std::pair<object_t::iterator, bool> emplace(Args&&... args);
+    std::pair<iterator, bool> emplace(Args&&... args);
 
+    iterator find(const object_t::key_type& key);
+    int count(const object_t::key_type& key);
+
+    size_t size() const;
+    bool empty() const;
+
+    iterator begin() noexcept;
+    iterator end() noexcept;
+    const_iterator cbegin() const noexcept;
+    const_iterator cend() const noexcept;
+    reverse_iterator rbegin() noexcept;
+    reverse_iterator rend() noexcept;
 private:
     void destory();
 

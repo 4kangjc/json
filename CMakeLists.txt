@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS}\
     -rdynamic\
     -O0\
     -ggdb\
-    -std=c++2a\
+    -std=c++17\
     -Wall\
     -Werror\
     -Wno-unused-function\
@@ -18,6 +18,7 @@ include_directories(./)
 
 set(LIB_SRC
     jsonc++/json.cc
+    jsonc++/util.cc
 )
 
 
