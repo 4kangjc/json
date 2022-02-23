@@ -7,6 +7,7 @@
 
 #include "value_t.h"
 #include "iter_impl.h"
+#include "marco.h"
 
 namespace json {
 
@@ -14,6 +15,7 @@ class basic_value {
     template <typename BasicJsonType>
     friend class iter::impl;
 public:
+    using difference_type = std::ptrdiff_t;
     using value_type = basic_value;
     using reference  = value_type&;
     using const_reference = const value_type&;
@@ -72,6 +74,10 @@ public:
     num_int_t as_int() const;
     num_uint_t as_uint() const;
 
+    template <class T> T as() const noexcept;
+    template <class T> bool is() const noexcept;
+    explicit operator bool() const { return !is_null(); }
+
     reference operator[](size_t idx);
     const_reference operator[](size_t idx) const;
     reference operator[](const object_t::key_type& key);
@@ -82,7 +88,9 @@ public:
     void push_back(const object_t::value_type& val);
     void push_back(object_t::value_type&& val);
 
-
+    void reserve(size_t size);
+    void resize(size_t size);
+    void clear();
 
     template <class... Args>
     reference emplace_back(Args&&... args);
@@ -90,8 +98,17 @@ public:
     template <class... Args>
     std::pair<iterator, bool> emplace(Args&&... args);
 
-    iterator find(const object_t::key_type& key);
-    int count(const object_t::key_type& key);
+    template <class... Args>
+    std::pair<basic_value::iterator, bool> try_emplace(Args&&... args);
+
+    template <typename K>
+    iterator find(K&& key);
+
+    template <typename K>
+    const_iterator find(K&& key) const;
+
+    template <typename K>
+    size_t count(K&& key) const;
 
     size_t size() const;
     bool empty() const;
@@ -102,6 +119,10 @@ public:
     const_iterator cend() const noexcept;
     reverse_iterator rbegin() noexcept;
     reverse_iterator rend() noexcept;
+    const_reverse_iterator rbegin() const noexcept;
+    const_reverse_iterator rend() const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
+    const_reverse_iterator crend() const noexcept;
 private:
     void destory();
 
@@ -143,6 +164,92 @@ private:
     json_value value_{};
 
 };
+
+
+template <class... Args>
+basic_value::reference basic_value::emplace_back(Args&&... args) {
+    if (is_null()) {
+        *this = basic_value(value_t::array);
+    }
+    if (is_array()) {
+        return value_.array->emplace_back(std::forward<Args>(args)...);
+    }
+    JSON_ERROR_MSG(false, "cannot use emplace_back() for non-array value");
+}
+
+template <class... Args>
+std::pair<basic_value::iterator, bool> basic_value::emplace(Args&&... args) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (is_object()) {
+        auto [iter, ok] = value_.object->emplace(std::forward<Args>(args)...);
+        iterator it(this);
+        it.iter_ = iter;
+        return {it, ok};
+    }
+    JSON_ERROR_MSG(false, "cannot use emplace() for non-object value");
+}
+
+template <class... Args>
+std::pair<basic_value::iterator, bool> basic_value::try_emplace(Args&&... args) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (is_object()) {
+        auto [iter, ok] = value_.object->try_emplace(std::forward<Args>(args)...);
+        iterator it(this);
+        it.iter_ = iter;
+        return {it, ok};
+    }
+    JSON_ERROR_MSG(false, "cannot use try_emplace() for non-object value");
+}
+
+template <typename K>
+basic_value::iterator basic_value::find(K&& key) {
+    if (is_object()) {
+        auto iter = value_.object->find(std::forward<K>(key));
+        iterator it(this);
+        it.iter_ = iter;
+        return it;
+    }
+    JSON_ERROR_MSG(false, "cannot use find() for non-object value");
+}
+
+template <typename K>
+basic_value::const_iterator basic_value::find(K&& key) const {
+    if (is_object()) {
+        auto iter = value_.object->find(std::forward<K>(key));
+        const_iterator it(this);
+        it.iter_ = iter;
+        return it;
+    }
+    JSON_ERROR_MSG(false, "cannot use find() for non-object value");
+}
+
+template <typename K>
+size_t basic_value::count(K&& key) const {
+    if (is_object()) {
+        return value_.object->count(std::forward<K>(key));
+    }
+    JSON_ERROR_MSG(false, "cannot use count() for non-object value");
+}
+
+template <> inline bool basic_value::as<bool>() const noexcept { return as_boolean(); }
+template <> inline bool basic_value::is<bool>() const noexcept { return is_boolean(); }
+template <> inline basic_value::num_int_t basic_value::as<basic_value::num_int_t>() const noexcept { return as_int(); }
+template <> inline bool basic_value::is<basic_value::num_int_t>() const noexcept { return is_num_int(); }
+template <> inline basic_value::num_uint_t basic_value::as<basic_value::num_uint_t>() const noexcept { return as_uint(); }
+template <> inline bool basic_value::is<basic_value::num_uint_t>() const noexcept { return is_num_uint(); }
+template <> inline float basic_value::as<float>() const noexcept { return as_float(); }
+template <> inline double basic_value::as<double>() const noexcept { return as_double(); }
+template <> inline bool basic_value::is<basic_value::num_real_t>() const noexcept { return is_real(); }
+template <> inline const char* basic_value::as<const char*>() const noexcept { return as_cstring(); }
+template <> inline basic_value::string_t basic_value::as<basic_value::string_t>() const noexcept { return as_string(); }
+template <> inline bool basic_value::is<basic_value::string_t>() const noexcept { return is_string(); }
+template <> inline bool basic_value::is<basic_value::array_t>() const noexcept { return is_array(); }
+template <> inline bool basic_value::is<basic_value::object_t>() const noexcept { return is_object(); }
+
 
 using value = basic_value;
 

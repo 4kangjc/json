@@ -16,12 +16,14 @@ public:
     using other_impl = impl<std::conditional_t<std::is_const_v<BasicJsonType>,
                         std::remove_const_t<BasicJsonType>, const BasicJsonType>>;
 
-    // friend BasicJsonType;
-    // friend other_impl;
+    friend BasicJsonType;
+    friend other_impl;
 
     using object_t = typename BasicJsonType::object_t;
     using array_t = typename BasicJsonType::array_t;
     
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = typename BasicJsonType::difference_type;
     using value_type = typename BasicJsonType::value_type;
     using pointer = std::conditional_t<std::is_const_v<BasicJsonType>, 
                                         typename BasicJsonType::const_pointer, 
@@ -35,6 +37,7 @@ public:
     ~impl() = default;
     impl(impl&& ) noexcept = default;
     impl& operator=(impl&& ) noexcept = default;
+    impl(const impl& ) = default;
 
 
     explicit impl(pointer object) noexcept : obj_(object) {
@@ -114,6 +117,7 @@ public:
             default:
                 JSON_ERROR_MSG(false, "cannot use operator--, iterator type is not object or array");
         }
+        return *this;
     }
 
     template <typename Iter, typename = 
@@ -195,7 +199,33 @@ private:
 template <typename iter>
 class reverse_iterator : public std::reverse_iterator<iter> {
 public:
+    using difference_type = std::ptrdiff_t;
+    using base_iterator = std::reverse_iterator<iter>;
+    using reference = typename iter::reference;
 
+    explicit reverse_iterator(const typename base_iterator::iterator_type& it) noexcept
+        : base_iterator(it) {}
+
+    explicit reverse_iterator(const base_iterator& it) noexcept
+        : base_iterator(it) {}
+    
+    reverse_iterator& operator++() {
+        return static_cast<reverse_iterator&>(base_iterator::operator++());
+    }
+
+    reverse_iterator& operator--() {
+        return static_cast<reverse_iterator&>(base_iterator::operator--());
+    }
+
+    auto key() const -> decltype(std::declval<iter>().key()) {
+        auto it = --this->base();
+        return it.key();
+    }
+
+    reference value() const {
+        auto it = --this->base();
+        return *it;
+    }
 };
 
 } // namespace json::iter

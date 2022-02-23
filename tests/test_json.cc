@@ -30,8 +30,30 @@ int main() {
     value["map"]["boolean"] = true;
 
     auto& map = value["map"];
-    for (auto it = map.begin(); it != map.end(); ++it) {
+    for (auto it = map.cbegin(); it != map.cend(); ++it) {
         std::cout << it.key() << " - " << it->as_string() << std::endl;
     }
+
+    // for (auto it = map.rbegin(); it != map.rend(); ++it) {
+    //     std::cout << it.key() << " - " << it->as_string() << std::endl;
+    // }
+    if (auto it = map.find("boolean"); it != map.cend()) {
+        std::cout << it.key() << " - " << it->as_boolean() << std::endl;
+    } else {
+        std::cout << "key = boolean is not exit" << std::endl;
+    }
+
+    if (!map.count("son")) {
+        std::cout << "key = son is not exit" << std::endl;
+    }
+
+    auto [it, ok] = map.try_emplace("three", 4u);
+    if (ok) {
+        std::cout << it.key() << "- " << it->as_string() << std::endl;
+    } else {
+        std::cout << "try emplace fail, key = " << it.key() << " exit, value = " << it->as_string() << std::endl;
+    }
+
+    std::cout << map["three"].as<int>() << std::endl;
 
 }

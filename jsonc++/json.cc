@@ -295,6 +295,58 @@ void basic_value::push_back(basic_value&& val) {
 
 // void push_back(const basic_value& val) {}
 
+size_t basic_value::size() const {
+    switch (type_) {
+        case value_t::null:
+            return 0;
+        case value_t::object:
+            return value_.object->size();
+        case value_t::array:
+            return value_.array->size();
+        default:
+            break;
+    }
+    JSON_ERROR_MSG(false, "cannot use size() for this type, type = " << type_name());
+}
+
+bool basic_value::empty() const {
+    switch (type_) {
+        case value_t::null:
+            return true;
+        case value_t::object:
+            return value_.object->empty();
+        case value_t::array:
+            return value_.array->empty();
+        default:
+            break;
+    }
+    JSON_ERROR_MSG(false, "cannot use empty() for this type, type = " << type_name());
+}
+
+
+void basic_value::reserve(size_t size) {
+    switch (type_) {
+        case value_t::null:
+            *this = basic_value(value_t::array);
+        case value_t::array:
+            return value_.array->reserve(size);
+        default:
+            break;
+    }
+    JSON_ERROR_MSG(false, "cannot use reserve() for this type, type = " << type_name());
+}
+
+void basic_value::resize(size_t size) {
+    switch (type_) {
+        case value_t::null:
+            *this = basic_value(value_t::array);
+        case value_t::array:
+            return value_.array->resize(size);
+        default:
+            break;
+    }
+    JSON_ERROR_MSG(false, "cannot use resize() for this type, type = " << type_name());
+}
 
 void basic_value::destory() {
     switch (type_) {
@@ -342,5 +394,45 @@ basic_value::iterator basic_value::end() noexcept {
     result.set_end();
     return result;
 }
+
+basic_value::const_iterator basic_value::cbegin() const noexcept {
+    const_iterator result(this);
+    result.set_begin();
+    return result;
+}
+
+basic_value::const_iterator basic_value::cend() const noexcept {
+    const_iterator result(this);
+    result.set_end();
+    return result;
+}
+
+basic_value::reverse_iterator basic_value::rbegin() noexcept {
+    return reverse_iterator(end());
+}
+
+basic_value::reverse_iterator basic_value::rend() noexcept {
+    return reverse_iterator(begin());
+}
+
+basic_value::const_reverse_iterator basic_value::rbegin() const noexcept {
+    return const_reverse_iterator(cend());
+}
+
+basic_value::const_reverse_iterator basic_value::rend() const noexcept {
+    return const_reverse_iterator(cbegin());
+}
+
+
+basic_value::const_reverse_iterator basic_value::crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+}
+
+basic_value::const_reverse_iterator basic_value::crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+}
+
+
+
 
 } // namespace json
