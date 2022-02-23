@@ -30,7 +30,7 @@ int main() {
     value["map"]["boolean"] = true;
 
     auto& map = value["map"];
-    for (auto it = map.cbegin(); it != map.cend(); ++it) {
+    for (auto it = map.crbegin(); it != map.crend(); ++it) {
         std::cout << it.key() << " - " << it->as_string() << std::endl;
     }
 
@@ -47,8 +47,7 @@ int main() {
         std::cout << "key = son is not exit" << std::endl;
     }
 
-    auto [it, ok] = map.try_emplace("three", 4u);
-    if (ok) {
+    if (auto [it, ok] = map.try_emplace("three", 4u); ok) {
         std::cout << it.key() << "- " << it->as_string() << std::endl;
     } else {
         std::cout << "try emplace fail, key = " << it.key() << " exit, value = " << it->as_string() << std::endl;
@@ -56,4 +55,11 @@ int main() {
 
     std::cout << map["three"].as<int>() << std::endl;
 
+    auto it = value["array"].begin();
+    std::cout << it->as_string() << std::endl;
+    auto cit = value["array"].cbegin() + 3;
+    std::cout << cit->as_string() << std::endl;
+    cit = it;
+    std::cout << ((cit == it) ? "cit == it" : "cit != it") << std::endl;
+    std::cout << value["array"].size() << std::endl;
 }

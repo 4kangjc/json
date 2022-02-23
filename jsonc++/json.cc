@@ -31,7 +31,7 @@ basic_value::json_value::json_value(value_t type) {
             object = new object_t();
             break;
         default:
-            std::cout << "invalid type" << std::endl;
+            JSON_ERROR_MSG(false, "invalid type to json_value");
     }
 }
 
@@ -125,7 +125,7 @@ bool basic_value::as_boolean() const {
         default:
             break;
     }
-    std::cout << "value cant't convertible to bool, type = " << type_name() << std::endl;
+    JSON_ERROR_MSG(false, "value cant't convertible to bool, type = " << type_name());
     return false;
 }
 
@@ -133,7 +133,7 @@ const char* basic_value::as_cstring() const {
     if (type_ == value_t::string) {
         return value_.string->c_str();
     }
-    std::cout << "value_type is not string, type = " << type_name() << std::endl;
+    JSON_ERROR_MSG(false, "value_type is not string, type = " << type_name());
     return nullptr;
 }
 
@@ -154,7 +154,7 @@ basic_value::string_t basic_value::as_string() const {
         default:
             break;
     }
-    std::cout << "value cant't convertible to string, type = " << type_name() << std::endl;
+    JSON_ERROR_MSG(false, "value cant't convertible to string, type = " << type_name());
     return "";
 }
 
@@ -173,7 +173,7 @@ float basic_value::as_float() const {
         default:
             break;
     }
-    std::cout << "value cant't convertible to float, type = " << type_name() << std::endl;
+    JSON_ERROR_MSG(false, "value cant't convertible to float, type = " << type_name());
     return 0;
 }
 
@@ -192,7 +192,7 @@ double basic_value::as_double() const {
         default:
             break;
     }
-    std::cout << "value cant't convertible to double, type = " << type_name() << std::endl;
+    JSON_ERROR_MSG(false, "value cant't convertible to double, type = " << type_name());
     return 0;
 }
 
@@ -211,8 +211,7 @@ basic_value::num_int_t basic_value::as_int() const {
         default:
             break;
     }
-    std::cout << "value cant't convertible to int, type = " << type_name() << std::endl;
-    return 0;
+    JSON_ERROR_MSG(false, "value cant't convertible to int, type = " << type_name());
 }
 
 basic_value::num_uint_t basic_value::as_uint() const {
@@ -230,8 +229,7 @@ basic_value::num_uint_t basic_value::as_uint() const {
         default:
             break;
     }
-    std::cout << "value cant't convertible to uint, type = " << type_name() << std::endl;
-    return 0;
+    JSON_ERROR_MSG(false, "value cant't convertible to uint, type = " << type_name());
 }
 
 basic_value::reference basic_value::operator[](size_t idx) {
@@ -243,24 +241,21 @@ basic_value::reference basic_value::operator[](size_t idx) {
                 value_.array->resize(idx + 1);
             return value_.array->operator[](idx);
         default:
-            std::cout << "invalid type, type = " << type_name() << std::endl;
-            throw std::exception();
+            JSON_ERROR_MSG(false, "invalid type use operator[], type = " << type_name());
     }
 }
 
-static const basic_value null;
+// static const basic_value null;
 
 basic_value::const_reference basic_value::operator[](size_t idx) const {
-    if (is_array()) {
+    if (JSON_LIKELY(is_array())) {
         if (value_.array->size() <= idx) {
-            std::cout << "out of range, array size = " << value_.array->size()
-            << ", index = " << idx << std::endl;
-            return null;
+            JSON_ERROR_MSG(false, "out of range, array size = " << value_.array->size()
+            << ", index = " << idx);
         }
         return value_.array->operator[](idx);
     }
-    std::cout << "invalid type, type = " << type_name() << std::endl;
-    return null;
+    JSON_ERROR_MSG(false, "invalid type use operator[], type = " << type_name());
 }
 
 basic_value::reference basic_value::operator[](const object_t::key_type& key) {
@@ -270,27 +265,25 @@ basic_value::reference basic_value::operator[](const object_t::key_type& key) {
         case value_t::object:
             return value_.object->operator[](key);
         default:
-            std::cout << "invalid type, type = " << type_name() << std::endl;
-            throw std::exception();
+            JSON_ERROR_MSG(false, "invalid type use operator[], type = " << type_name());
     }
 }
 
 basic_value::const_reference basic_value::operator[](const object_t::key_type& key) const {
-    if (is_object()) {
+    if (JSON_LIKELY(is_object())) {
         return value_.object->operator[](key);
     }
-    std::cout << "invalid type, type = " << type_name() << std::endl;
-    return null;
+    JSON_ERROR_MSG(false, "invalid type use operator[], type = " << type_name());
 }
 
 void basic_value::push_back(basic_value&& val) {
     if (is_null()) {
         *this = basic_value(value_t::array);
     }
-    if (is_array()) {
+    if (JSON_LIKELY(is_array())) {
         return value_.array->push_back(std::move(val));
     }
-    std::cout << "invalid type, type = " << type_name() << std::endl;
+    JSON_ERROR_MSG(false, "invalid type use push_back, type = " << type_name());
 }
 
 // void push_back(const basic_value& val) {}
@@ -346,6 +339,34 @@ void basic_value::resize(size_t size) {
             break;
     }
     JSON_ERROR_MSG(false, "cannot use resize() for this type, type = " << type_name());
+}
+
+void basic_value::clear() noexcept {
+    switch (type_) {
+        case value_t::object:
+            value_.object->clear();
+            break;
+        case value_t::array:
+            value_.array->clear();
+            break;
+        case value_t::string:
+            value_.string->clear();
+            break;
+        case value_t::number_int:
+            value_.num_int = 0;
+            break;
+        case value_t::number_uint:
+            value_.num_uint = 0;
+            break;
+        case value_t::number_real:
+            value_.num_real = 0.0;
+            break;
+        case value_t::boolean:
+            value_.boolean = false;
+            break;
+        default:
+            break;
+    }
 }
 
 void basic_value::destory() {

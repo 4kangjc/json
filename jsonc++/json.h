@@ -90,7 +90,7 @@ public:
 
     void reserve(size_t size);
     void resize(size_t size);
-    void clear();
+    void clear() noexcept;
 
     template <class... Args>
     reference emplace_back(Args&&... args);
@@ -171,7 +171,7 @@ basic_value::reference basic_value::emplace_back(Args&&... args) {
     if (is_null()) {
         *this = basic_value(value_t::array);
     }
-    if (is_array()) {
+    if (JSON_LIKELY(is_array())) {
         return value_.array->emplace_back(std::forward<Args>(args)...);
     }
     JSON_ERROR_MSG(false, "cannot use emplace_back() for non-array value");
@@ -182,7 +182,7 @@ std::pair<basic_value::iterator, bool> basic_value::emplace(Args&&... args) {
     if (is_null()) {
         *this = basic_value(value_t::object);
     }
-    if (is_object()) {
+    if (JSON_LIKELY(is_object())) {
         auto [iter, ok] = value_.object->emplace(std::forward<Args>(args)...);
         iterator it(this);
         it.iter_ = iter;
@@ -196,7 +196,7 @@ std::pair<basic_value::iterator, bool> basic_value::try_emplace(Args&&... args) 
     if (is_null()) {
         *this = basic_value(value_t::object);
     }
-    if (is_object()) {
+    if (JSON_LIKELY(is_object())) {
         auto [iter, ok] = value_.object->try_emplace(std::forward<Args>(args)...);
         iterator it(this);
         it.iter_ = iter;
@@ -207,7 +207,7 @@ std::pair<basic_value::iterator, bool> basic_value::try_emplace(Args&&... args) 
 
 template <typename K>
 basic_value::iterator basic_value::find(K&& key) {
-    if (is_object()) {
+    if (JSON_LIKELY(is_object())) {
         auto iter = value_.object->find(std::forward<K>(key));
         iterator it(this);
         it.iter_ = iter;
@@ -218,7 +218,7 @@ basic_value::iterator basic_value::find(K&& key) {
 
 template <typename K>
 basic_value::const_iterator basic_value::find(K&& key) const {
-    if (is_object()) {
+    if (JSON_LIKELY(is_object())) {
         auto iter = value_.object->find(std::forward<K>(key));
         const_iterator it(this);
         it.iter_ = iter;
@@ -229,7 +229,7 @@ basic_value::const_iterator basic_value::find(K&& key) const {
 
 template <typename K>
 size_t basic_value::count(K&& key) const {
-    if (is_object()) {
+    if (JSON_LIKELY(is_object())) {
         return value_.object->count(std::forward<K>(key));
     }
     JSON_ERROR_MSG(false, "cannot use count() for non-object value");

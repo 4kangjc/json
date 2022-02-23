@@ -38,6 +38,13 @@ public:
     impl(impl&& ) noexcept = default;
     impl& operator=(impl&& ) noexcept = default;
     impl(const impl& ) = default;
+    impl(const other_impl& rhs) : obj_(rhs.obj_), iter_(rhs.iter_) {}
+    impl& operator=(const impl&) = default;
+    impl& operator=(const other_impl& rhs) {
+        obj_ = rhs.obj_;
+        iter_ = rhs.iter_;
+        return *this;
+    }
 
 
     explicit impl(pointer object) noexcept : obj_(object) {
@@ -100,9 +107,15 @@ public:
                 std::advance(std::get<1>(iter_), 1);
                 break;
             default:
-                JSON_ERROR_MSG(false, "cannot use operator++, iterator type is not object or array");
+                JSON_ERROR_MSG(false, "cannot use operator++, iterator type is not object or array, type = " << obj_->type_name());
         }
         return *this;
+    }
+
+    const impl operator++(int) {
+        auto res = *this;
+        ++(*this);
+        return res;
     }
 
     impl& operator--() {
@@ -115,9 +128,56 @@ public:
                 std::advance(std::get<1>(iter_), -1);
                 break;
             default:
-                JSON_ERROR_MSG(false, "cannot use operator--, iterator type is not object or array");
+                JSON_ERROR_MSG(false, "cannot use operator--, iterator type is not object or array, type = " << obj_->type_name());
         }
         return *this;
+    }
+
+    const impl operator--(int) {
+        auto res = *this;
+        --(*this);
+        return res;
+    }
+
+    impl& operator+=(difference_type i) {
+        JSON_ERROR(obj_ != nullptr);
+        if (JSON_LIKELY(obj_->is_array())) {
+            std::advance(std::get<1>(iter_), i);
+            return *this;
+        }
+        JSON_ERROR_MSG(false, "cannot use operator++, iterator type is not array, type = " << obj_->type_name());
+    }
+
+    impl& operator-=(difference_type i) {
+        return operator+=(-i);
+    }
+
+    impl operator+(difference_type i) const {
+        auto res = *this;
+        res += i;
+        return res;
+    }
+
+    impl operator-(difference_type i) const {
+        auto res = *this;
+        res -= i;
+        return res;
+    }
+
+    difference_type operator-(const impl& rhs) const {
+        JSON_ERROR(obj_ != nullptr);
+        if (JSON_LIKELY(obj_->is_array())) {
+            return std::get<1>(iter_) - std::get<1>(rhs.iter_);
+        }
+        JSON_ERROR_MSG(false, "cannot use operator-, iterator type is not array, type = " << obj_->type_name());
+    }
+
+    reference operator[](difference_type n) const {
+        JSON_ERROR(obj_ != nullptr);
+        if (JSON_LIKELY(obj_->is_array())) {
+            return *std::next(std::get<1>(iter_), n);
+        }
+        JSON_ERROR_MSG(false, "cannot use operator-, iterator type is not array, type = " << obj_->type_name());
     }
 
     template <typename Iter, typename = 
@@ -147,7 +207,7 @@ public:
         if (JSON_LIKELY(obj_->is_object())) {
             return std::get<0>(iter_)->first;
         }
-        JSON_ERROR_MSG(false, "cannot use key() for non-object iterators");
+        JSON_ERROR_MSG(false, "cannot use key() for non-object iterators, type = " << obj_->type_name());
     }
 
 
@@ -169,7 +229,7 @@ public:
                 break;
             }
             default:
-                JSON_ERROR_MSG(false, "cannot use set_begin() for non-object or non-array iterators");
+                JSON_ERROR_MSG(false, "cannot use set_begin() for non-object or non-array iterators, type = " << obj_->type_name());
                 break;
         }
     }
@@ -187,7 +247,7 @@ public:
                 break;
             }
             default:
-                JSON_ERROR_MSG(false, "cannot use set_begin() for non-object or non-array iterators");
+                JSON_ERROR_MSG(false, "cannot use set_begin() for non-object or non-array iterators, type = " << obj_->type_name());
                 break;
         }
     }
@@ -213,11 +273,39 @@ public:
         return static_cast<reverse_iterator&>(base_iterator::operator++());
     }
 
+    const reverse_iterator operator++(int) {
+        return static_cast<reverse_iterator>(base_iterator::operator++(1));
+    }
+
     reverse_iterator& operator--() {
         return static_cast<reverse_iterator&>(base_iterator::operator--());
     }
 
-    auto key() const -> decltype(std::declval<iter>().key()) {
+    const reverse_iterator operator--(int) {
+        return static_cast<reverse_iterator>(base_iterator::operator--(1));
+    }
+
+    reverse_iterator& operator+=(difference_type i) {
+        return static_cast<reverse_iterator&>(base_iterator::operator+=(i));
+    }
+
+    reverse_iterator operator+(difference_type i) const {
+        return static_cast<reverse_iterator>(base_iterator::operator+(i));
+    }
+
+    reverse_iterator operator-(difference_type i) const {
+        return static_cast<reverse_iterator>(base_iterator::operator-(i));
+    }
+
+    difference_type operator-(const reverse_iterator& other) {
+        return base_iterator(*this) - base_iterator(other);
+    }
+
+    reference operator[](difference_type n) {
+        return *operator+(n);
+    }
+
+    auto key() const /*-> decltype(std::declval<iter>().key()) */ {
         auto it = --this->base();
         return it.key();
     }
