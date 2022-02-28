@@ -17,7 +17,6 @@ set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS}\
 include_directories(./)
 
 set(LIB_SRC
-    jsonc++/json.cc
     jsonc++/util.cc
 )
 
@@ -41,6 +40,9 @@ endif(BUILD_STATIC_LIBS)
 
 add_executable(test_json "tests/test_json.cc")
 target_link_libraries(test_json jsonc++)
+
+add_executable(test_parse "tests/test_parse.cc")
+target_link_libraries(test_parse jsonc++)
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

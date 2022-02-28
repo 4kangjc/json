@@ -15,14 +15,14 @@
 
 #define JSON_ASSERT(x) \
     if (JSON_UNLIKELY(!(x))) { \
-        std::cout << "ASSERTION: " << #x \
+        std::cout << __FILE__ << " : " << __LINE__ << ", ASSERTION: " << #x \
             << "\nbacktrace:\n" << json::BacktraceToString(100, 2, "    ");  \
         assert(x); \
     }
 
 #define JSON_ASSERT2(x, w) \
     if (JSON_UNLIKELY((!(x)))) { \
-        std::cout << "ASSERTION: " << #x << '\n' << w   \
+        std::cout << __FILE__ << " : " << __LINE__ << ", ASSERTION: " << #x << '\n' << w   \
             << "\nbacktrace:\n" << json::BacktraceToString(100, 2, "    ");  \
         assert(x); \
     }

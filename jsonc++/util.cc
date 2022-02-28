@@ -29,7 +29,7 @@ void Backtrace(std::vector<std::string>& bt, int size, int skip) {
     size_t s = ::backtrace(array, size);
     char** strings = backtrace_symbols(array, s);
     if (strings == NULL) {
-        // FLEXY_LOG_ERROR(g_logger) << "backtrace_symbols eroor";
+        // TODO LOG << "backtrace_symbols eroor";
         return;
     }
     for (size_t i = skip; i < s; ++i) {

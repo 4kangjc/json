@@ -29,8 +29,8 @@ public:
                                         typename BasicJsonType::const_pointer, 
                                         typename BasicJsonType::pointer>;
     using reference = std::conditional_t<std::is_const_v<BasicJsonType>,
-                                        typename BasicJsonType::reference,
-                                        typename BasicJsonType::const_reference>;
+                                        typename BasicJsonType::const_reference,
+                                        typename BasicJsonType::reference>;
 
 
     impl() = default;
@@ -68,6 +68,7 @@ public:
                 auto& iter = *std::get_if<0>(&iter_);
                 JSON_ERROR(iter != obj_->value_.object->end());
                 return iter->second;
+                // return (*iter).second;
             }
             case value_t::array: {
                 auto& iter = *std::get_if<1>(&iter_);
@@ -86,6 +87,7 @@ public:
                 auto& iter = *std::get_if<0>(&iter_);
                 JSON_ERROR(iter != obj_->value_.object->end());
                 return &iter->second;
+                // return &(*iter).second;
             }
             case value_t::array: {
                 auto& iter = *std::get_if<1>(&iter_);
@@ -219,13 +221,15 @@ public:
         JSON_ERROR(obj_ != nullptr);
         switch (obj_->type_) {
             case value_t::object: {
-                auto& iter = *std::get_if<0>(&iter_);
-                iter = obj_->value_.object->begin();
+                // auto& iter = *std::get_if<0>(&iter_);
+                // iter = obj_->value_.object->begin();
+                iter_ = obj_->value_.object->begin();
                 break;
             }
             case value_t::array: {
-                auto& iter = *std::get_if<1>(&iter_);
-                iter = obj_->value_.array->begin();
+                // auto& iter = *std::get_if<1>(&iter_);
+                // iter = obj_->value_.array->begin();
+                iter_ = obj_->value_.array->begin();
                 break;
             }
             default:
@@ -237,13 +241,15 @@ public:
         JSON_ERROR(obj_ != nullptr);
         switch (obj_->type_) {
             case value_t::object: {
-                auto& iter = *std::get_if<0>(&iter_);
-                iter = obj_->value_.object->end();
+                // auto& iter = *std::get_if<0>(&iter_);
+                // iter = obj_->value_.object->end();
+                iter_ = obj_->value_.object->end();
                 break;
             }
             case value_t::array: {
-                auto& iter = *std::get_if<1>(&iter_);
-                iter = obj_->value_.array->end();
+                // auto& iter = *std::get_if<1>(&iter_);
+                // iter = obj_->value_.array->end();
+                iter_ = obj_->value_.array->end();
                 break;
             }
             default:
