@@ -158,6 +158,14 @@ public:
     template <typename K>
     const_iterator find(K&& key) const;
 
+    iterator erase(iterator pos);
+    const_iterator erase(const_iterator pos);
+    iterator erase(iterator begin, iterator end);
+    const_iterator erase(const_iterator begin, const_iterator end);
+
+    template <typename K>
+    size_t erase(K&& key);
+
     template <typename K>
     size_t count(K&& key) const;
 
@@ -249,6 +257,70 @@ std::pair<typename BASIC_VALUE_TPL::iterator, bool> BASIC_VALUE_TPL::try_emplace
         return {it, ok};
     }
     JSON_ERROR_MSG(false, "cannot use try_emplace() for non-object value");
+}
+
+#define __erase__(pos)                                                      \
+    switch (type_) {                                                        \
+        case value_t::object:                                               \
+            result.iter_ = value_.object->erase(std::get<0>(pos.iter_));    \
+            return result;                                                  \
+        case value_t::array:                                                \
+            result.iter_ = value_.array->erase(std::get<1>(pos.iter_));     \
+            return result;                                                  \
+        default:                                                            \
+            break;                                                          \
+    }                                                                       \
+    JSON_ERROR_MSG(false, "invalid type use erase, type = " << type_name())
+
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::iterator pos) {
+    iterator result(this);
+    __erase__(pos);
+}
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::const_iterator pos) {
+    const_iterator result(this);
+    __erase__(pos);
+}
+
+#undef __erase__
+
+#define __erase__(begin, end)                                                                       \
+    switch (type_) {                                                                                \
+        case value_t::object:                                                                       \
+            result.iter_ = value_.object->erase(std::get<0>(begin.iter_), std::get<0>(end.iter_));  \
+            return result;                                                                          \
+        case value_t::array:                                                                        \
+            result.iter_ = value_.array->erase(std::get<1>(begin.iter_), std::get<1>(end.iter_));   \
+            return result;                                                                          \
+        default:                                                                                    \
+            break;                                                                                  \
+    }                                                                                               \
+    JSON_ERROR_MSG(false, "invalid type use erase, type = " << type_name())
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::iterator begin, typename BASIC_VALUE_TPL::iterator end) {
+    iterator result(this);
+    __erase__(begin, end);
+}
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::const_iterator begin, typename BASIC_VALUE_TPL::const_iterator end) {
+    const_iterator result(this);
+    __erase__(begin, end);
+}
+
+#undef __erase__
+
+BASIC_VALUE_TPL_DECL
+template <typename K>
+size_t BASIC_VALUE_TPL::erase(K&& key) {
+    if (JSON_LIKELY(is_object())) {
+        return value_.object->erase(std::forward<K>(key));
+    }
+    JSON_ERROR_MSG(false, "cannot use find() for non-object value");
 }
 
 BASIC_VALUE_TPL_DECL

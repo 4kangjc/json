@@ -62,4 +62,13 @@ int main() {
     cit = it;
     std::cout << ((cit == it) ? "cit == it" : "cit != it") << std::endl;
     std::cout << value["array"].size() << std::endl;
+
+
+    if (auto iter = map.find("three"); iter != map.end()) {
+        map.erase(iter);
+    }
+
+    if (!map.count("three")) {
+        std::cout << "erase three success!\n";
+    }
 }
