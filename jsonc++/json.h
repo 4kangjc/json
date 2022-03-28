@@ -4,12 +4,14 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <unordered_map>
+#include <optional>
 
+#include "input_adapters.h"
 #include "value_t.h"
 #include "iter_impl.h"
 #include "marco.h"
 #include "meta.h"
+#include "reader.h"
 
 namespace json {
 
@@ -37,8 +39,15 @@ template <template<class, class, typename...> class ObjectType = std::map,
           >
 // BASIC_VALUE_TPL_DECL
 class basic_value {
+private:
     template <typename BasicJsonType>
     friend class iter::impl;
+
+    template <typename BasicJsonType, typename InputType, bool ignore_comments>
+    friend class reader;
+
+    template<typename BasicJsonType>
+    friend class json_sax_dom_parser;
 public:
     using difference_type = std::ptrdiff_t;
     using value_type = basic_value;
@@ -87,9 +96,11 @@ public:
         } else if constexpr (meta::is_cstring_v<T>) {
             value_.string = new string_t(v);
             type_ = value_t::string;
+        } else if constexpr (std::is_same_v<T, nullptr_t>) {
+            
         } else {
             // TODO LOG
-            std::cout << "invalid type create basic_value\n";
+            JSON_LOG("invalid type create basic_value\n");
         }
     }
 
@@ -113,7 +124,7 @@ public:
 
     bool as_boolean() const;
     const char* as_cstring() const;
-    char* as_cstring();     // is not const !!! can write
+    // char* as_cstring();     // is not const !!! can write
     string_t as_string() const;
     float as_float() const;
     double as_double() const;
@@ -130,6 +141,7 @@ public:
     reference operator[](size_t idx);
     const_reference operator[](size_t idx) const;
     reference operator[](const typename object_t::key_type& key);
+    reference operator[](typename object_t::key_type&& key);
     const_reference operator[](const typename object_t::key_type& key) const;
 
     void push_back(basic_value&& val);
@@ -187,6 +199,40 @@ public:
     const_reference front() const { return *cbegin(); }
     reference back() { return *--end(); }
     const_reference back() const { return *--cend(); }
+
+public:
+    template <bool ignore_comment = false, typename InputType>
+    static std::optional<basic_value> parse(InputType&& i, parser_callback_t<basic_value>&& cb = nullptr) {
+        basic_value result;
+#define adapter input_adapter(std::forward<InputType>(i))
+        using InputAdapterType = decltype(adapter);
+        auto reader = json::reader<basic_value, InputAdapterType, ignore_comment>(adapter, std::move(cb));
+        auto ok = reader.parse(result);
+#undef adapter
+        if (ok) {
+            return result;
+        }
+        JSON_LOG(reader.get_error_msg());
+        return {};
+    }
+
+
+    template <bool ignore_commet = false, typename IteratorType>
+    static std::optional<basic_value> parse(IteratorType begin, IteratorType end, parser_callback_t<basic_value>&& cb = nullptr) {
+        basic_value result;
+#define adapter input_adapter(std::move(begin), std::move(end)) 
+        using InputAdapterType = decltype(adapter);
+        auto reader = json::reader<basic_value, InputAdapterType, ignore_commet>(adapter, std::move(cb));
+        auto ok = parse(result);
+#undef adapter
+        if (ok) {
+            return result;
+        }
+        JSON_LOG(reader.get_error_msg());
+        return {};
+    }
+private:
+    
 private:
     void destory();
 
@@ -215,6 +261,7 @@ private:
     json_value value_{};
 
 };
+
 
 
 BASIC_VALUE_TPL_DECL
@@ -396,7 +443,6 @@ BASIC_VALUE_TPL::basic_value(value_t type)
 
 BASIC_VALUE_TPL_DECL
 BASIC_VALUE_TPL::basic_value(basic_value&& rhs) noexcept {
-    destory();
     value_ = rhs.value_;
     type_ = rhs.type_;
     rhs.value_ = {};
@@ -454,7 +500,7 @@ bool BASIC_VALUE_TPL::as_boolean() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to bool, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to bool, type = " << type_name());
     return false;
 }
 
@@ -468,14 +514,14 @@ const char* BASIC_VALUE_TPL::as_cstring() const {
     return nullptr;
 }
 
-BASIC_VALUE_TPL_DECL
-char* BASIC_VALUE_TPL::as_cstring() {
-    if (JSON_LIKELY(is_string())) {
-        return value_.string->data();
-    }
-    JSON_ERROR_MSG(false, "value_type is not string, type = " << type_name());
-    return nullptr;
-}
+// BASIC_VALUE_TPL_DECL
+// char* BASIC_VALUE_TPL::as_cstring() {
+//     if (JSON_LIKELY(is_string())) {
+//         return value_.string->data();
+//     }
+//     JSON_ERROR_MSG(false, "value_type is not string, type = " << type_name());
+//     return nullptr;
+// }
 
 BASIC_VALUE_TPL_DECL
 typename BASIC_VALUE_TPL::string_t BASIC_VALUE_TPL::as_string() const {
@@ -495,7 +541,7 @@ typename BASIC_VALUE_TPL::string_t BASIC_VALUE_TPL::as_string() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to string, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to string, type = " << type_name());
     return "";
 }
 
@@ -515,7 +561,7 @@ float BASIC_VALUE_TPL::as_float() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to float, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to float, type = " << type_name());
     return 0;
 }
 
@@ -535,7 +581,7 @@ double BASIC_VALUE_TPL::as_double() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to double, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to double, type = " << type_name());
     return 0;
 }
 
@@ -555,7 +601,7 @@ typename BASIC_VALUE_TPL::num_real_t BASIC_VALUE_TPL::as_real() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to double, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to double, type = " << type_name());
     return 0;
 }
 
@@ -575,7 +621,7 @@ typename BASIC_VALUE_TPL::num_int_t BASIC_VALUE_TPL::as_int() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to int, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to int, type = " << type_name());
 }
 
 BASIC_VALUE_TPL_DECL
@@ -594,7 +640,7 @@ typename BASIC_VALUE_TPL::num_uint_t BASIC_VALUE_TPL::as_uint() const {
         default:
             break;
     }
-    JSON_ERROR_MSG(false, "value cant't convertible to uint, type = " << type_name());
+    JSON_ERROR_MSG(false, "value can't convertible to uint, type = " << type_name());
 }
 
 BASIC_VALUE_TPL_DECL
@@ -631,6 +677,18 @@ typename BASIC_VALUE_TPL::reference BASIC_VALUE_TPL::operator[](const typename o
             *this = basic_value(value_t::object);
         case value_t::object:
             return value_.object->operator[](key);
+        default:
+            JSON_ERROR_MSG(false, "invalid type use operator[], type = " << type_name());
+    }
+}
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::reference BASIC_VALUE_TPL::operator[](typename object_t::key_type&& key) {
+    switch (type_) {
+        case value_t::null:
+            *this = basic_value(value_t::object);
+        case value_t::object:
+            return value_.object->operator[](std::move(key));
         default:
             JSON_ERROR_MSG(false, "invalid type use operator[], type = " << type_name());
     }

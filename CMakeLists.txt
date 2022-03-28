@@ -44,6 +44,11 @@ target_link_libraries(test_json jsonc++)
 add_executable(test_parse "tests/test_parse.cc")
 target_link_libraries(test_parse jsonc++)
 
+add_executable(test_meta "tests/test_meta.cc")
+target_link_libraries(test_meta jsonc++)
+
+add_executable(test_read "tests/test_read.cc")
+target_link_libraries(test_read jsonc++)
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

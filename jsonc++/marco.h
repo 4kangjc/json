@@ -26,6 +26,9 @@
             << "\nbacktrace:\n" << json::BacktraceToString(100, 2, "    ");  \
         assert(x); \
     }
+
+#define JSON_LOG(msg) \
+    std::cout << __FILE__ << " : " << __LINE__ << " " << msg;
     
 #ifdef JSON_USE_EXCEPTION
 
