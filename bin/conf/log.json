@@ -1,0 +1,30 @@
+{
+    "logs": [
+        {
+            "appenders": [
+                {
+                    "file": "bin/conf/root.log",
+                    "type": "FileLogAppender"
+                },
+                {
+                    "type": "StdoutLogAppender"
+                }
+            ],
+            "level": "info",
+            "name": "root"
+        },
+        {
+            "appenders": [
+                {
+                    "file": "bin/conf/system.log",
+                    "type": "FileLogAppender"
+                },
+                {
+                    "type": "StdoutLogAppender"
+                }
+            ],
+            "level": "info",
+            "name": "system"
+        }
+    ]
+}

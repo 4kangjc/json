@@ -686,6 +686,7 @@ typename BASIC_VALUE_TPL::num_int_t BASIC_VALUE_TPL::as_int() const {
             break;
     }
     JSON_ERROR_MSG(false, "value can't convertible to int, type = " << type_name());
+    return 0;
 }
 
 BASIC_VALUE_TPL_DECL
@@ -705,6 +706,7 @@ typename BASIC_VALUE_TPL::num_uint_t BASIC_VALUE_TPL::as_uint() const {
             break;
     }
     JSON_ERROR_MSG(false, "value can't convertible to uint, type = " << type_name());
+    return 0;
 }
 
 BASIC_VALUE_TPL_DECL
