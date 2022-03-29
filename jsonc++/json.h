@@ -231,7 +231,71 @@ public:
         JSON_LOG(reader.get_error_msg());
         return {};
     }
-private:
+
+    std::ostream& dump(std::ostream& os) const {
+        switch (type_) {
+            case value_t::array: {
+                os << '[';
+                bool first = true;
+                for (const auto& value : *value_.array) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        os << ", ";
+                    }
+                    value.dump(os);
+                }
+                os << ']';
+                break;
+            }
+            case value_t::object: {
+                os << '{';
+                bool first = true;
+                for (const auto& [key, value] : *value_.object) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        os << ", ";
+                    }
+                    os << '\"' << key << "\": ";
+                    value.dump(os);
+                }
+                os << '}';
+                break;
+            }
+            case value_t::null: {
+                os << "null";
+                break;
+            }
+            case value_t::boolean: {
+                os << (value_.boolean ? "true" : "false");
+                break;
+            }
+            case value_t::number_int: {
+                os << as_int();
+                break;
+            }
+            case value_t::number_uint: {
+                os << as_uint();
+                break;
+            }
+            case value_t::number_real: {
+                os << as_real();
+                break;
+            }
+            case value_t::string: {
+                os << '\"' << as_string() << '\"';
+                break;
+            }
+            default:
+                break;
+        }
+        return os;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const basic_value& json)  {
+        return json.dump(os);
+    }
     
 private:
     void destory();

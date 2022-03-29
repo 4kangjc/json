@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include "jsonc++/json.h"
 
 void print_json(json::value& json, int level) {
@@ -46,16 +47,30 @@ int main(int argc, char** argv) {
 
     auto json = json::value::parse(is1);
     if (json) {
-        print_json(*json, 0);
+        // print_json(*json, 0);
+        // json->dump(std::cout);
+        // std::cout << std::endl;
+        std::cout << *json << std::endl;
     }
     auto json2 = json::value::parse(s2);
     if (json2) {
-        print_json(*json2, 0);
+    //     print_json(*json2, 0);
+        std::ofstream os("bin/conf/test6.json");
+        if (os) {
+            json2->dump(os);
+        }
+        // std::cout << std::endl;
     }
     if (auto json3 = json::value::parse(is3); json3) {
-        print_json(*json3, 0);
+    //     print_json(*json3, 0);
+        std::stringstream ss;
+        json3->dump(ss);
+        std::cout << ss.str() << std::endl;
     }
     if (auto json4 = json::value::parse(file); json4) {
-        print_json(*json4, 0);
+    //     print_json(*json4, 0);
+        // json4->dump(std::cout);
+        // std::cout << std::endl;
+        std::cout << *json4 << std::endl;
     }
 }

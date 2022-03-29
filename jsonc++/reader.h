@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 #include "lexer.h"
 #include "json_sax.h"
