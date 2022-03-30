@@ -354,7 +354,7 @@ public:
                 break;
             }
             case value_t::string: {
-                os << L'\"' << as_cstring() << L'\"';
+                os << L'\"' << as_string() << L'\"';
                 break;
             }
             default:
@@ -362,7 +362,14 @@ public:
         }
         return os;
     }
-    
+     
+    template <bool pretty = false, typename CharType = typename string_t::value_type,
+              typename Output, typename = std::enable_if_t<
+              std::is_convertible_v<Output, output_adapter<char>>>>
+    void write(Output&& op) const {
+        json::writer<basic_value, pretty, CharType> writer(std::forward<Output>(op));
+        writer.dump(*this);
+    }
 private:
     void destory();
 

@@ -26,7 +26,7 @@ namespace json {
 
 
 
-template <typename BasicJsonType, bool pretty = false, typename CharType = char>
+template <typename BasicJsonType, bool pretty = false, typename CharType = typename BasicJsonType::string_t::value_type>
 class writer : noncopyable {
 public:
     using string_t = typename BasicJsonType::string_t;
@@ -46,7 +46,7 @@ public:
 
     void dump(const BasicJsonType& json) {
         if constexpr (pretty) {
-            __write(json, 0);
+            __write(json, 1);
         } else {
             __write(json);
         }
@@ -68,9 +68,9 @@ private:
                     }
                     oa->write_character('\"');
                     oa->write_characters(key.data(), key.size());
-                    // oa->write_characters("\":", 2);
-                    oa->write_character('\"');
-                    oa->write_character(':');
+                    // oa->write_character('\"');
+                    // oa->write_character(':');
+                    write_literal_value("\":", 2);
                     __write(value);
                 }
                 oa->write_character('}');
@@ -92,16 +92,16 @@ private:
             }
             case value_t::null: {
                 // oa->write_characters("null", 4);
-                write_literal_value("null", 4)
+                write_literal_value("null", 4);
                 break;
             }
             case value_t::boolean: {
                 if (json.value_.boolean) {
                     // oa->write_characters("true", 4);
-                    write_literal_value("true", 4)
+                    write_literal_value("true", 4);
                 } else {
                     // oa->write_characters("false", 5);
-                    write_literal_value("false", 5)
+                    write_literal_value("false", 5);
                 }
                 break;
             }
@@ -182,7 +182,7 @@ private:
                     std::basic_stringstream<CharType> ss;
                     ss << json.value_.num_real;
                     string_t num_string = ss.str();
-                    ss >> num_string;
+                    // ss >> num_string;
                     // oa->write_characters(ss.str(), ss.str().size());
                     oa->write_characters(num_string.data(), num_string.size());
                 }
@@ -199,14 +199,160 @@ private:
     }
 
     void __write(const BasicJsonType& json, unsigned int level) {
+        switch (json.type_) {
+            case value_t::object: {
+                if (json.value_.object->empty()) {
+                    write_literal_value("{}", 2);
+                    return;
+                }
+                string_t indent_string(level * 4, ' ');
+                write_literal_value("{\n", 2);
+                bool first = true;
+                for (const auto& [key, value] : *json.value_.object) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        write_literal_value(",\n", 2);
+                    }
+                    oa->write_characters(indent_string.data(), indent_string.size());
+                    oa->write_character('\"');
+                    oa->write_characters(key.data(), key.size());
+                    write_literal_value("\": ", 3);
+                    __write(value, level + 1);
+                }
+                oa->write_character('\n');
+                indent_string.resize((level - 1) * 4);
+                oa->write_characters(indent_string.data(), indent_string.size());
+                oa->write_character('}');
+                break;
+            }
+            case value_t::array: {
+                if (json.value_.array->empty()) {
+                    write_literal_value("[]", 2);
+                    return;
+                }
+                string_t indent_string(level * 4, ' ');
+                write_literal_value("[\n", 2);
+                bool first = true;
+                for (const auto& value : *json.value_.array) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        write_literal_value(",\n", 2);
+                    }
+                    oa->write_characters(indent_string.data(), indent_string.size());
+                    __write(value, level + 1);
+                }
+                oa->write_character('\n');
+                indent_string.resize((level - 1) * 4);
+                oa->write_characters(indent_string.data(), indent_string.size());
+                oa->write_character(']');
+                break;
+            }
+            case value_t::null: {
+                write_literal_value("null", 4);
+                break;
+            }
+            case value_t::boolean: {
+                if (json.value_.boolean) {
+                    write_literal_value("true", 4);
+                } else {
+                    write_literal_value("false", 5);
+                }
+                break;
+            }
+            case value_t::number_int: {
+                if constexpr (sizeof(CharType) == 1) {
+                    string_t num_string;
+                    if constexpr (sizeof(num_int_t) <= 4) {
+                        num_string.resize(32);
+                    } else if constexpr (sizeof(num_int_t) <= 8) {
+                        num_string.resize(64);
+                    } else {
+                        num_string.resize(128);
+                    }
+                    auto begin = (char*)num_string.data();
+                    auto end   = (char*)num_string.data() + num_string.size();
+                    auto [ptr, ec] = std::to_chars(begin, end, json.value_.num_int);
+                    if (JSON_LIKELY(ec == std::errc())) {
+                        oa->write_characters(num_string.data(), ptr - begin);
+                    } else {
 
+                    }
+                } else {
+                    std::basic_stringstream<CharType> ss;
+                    ss << json.value_.num_int;
+                    string_t num_string = ss.str();
+                    oa->write_characters(num_string.data(), num_string.size());
+                }
+                break;
+            }
+            case value_t::number_uint: {
+                if constexpr (sizeof(CharType) == 1) {
+                    string_t num_string;
+                    if constexpr (sizeof(num_uint_t) <= 4) {
+                        num_string.resize(32);
+                    } else if constexpr (sizeof(num_uint_t) <= 8) {
+                        num_string.resize(64);
+                    } else {
+                        num_string.resize(128);
+                    }
+                    auto begin = (char*)num_string.data();
+                    auto end   = (char*)num_string.data() + num_string.size();
+                    auto [ptr, ec] = std::to_chars(begin, end, json.value_.num_uint);
+                    if (JSON_LIKELY(ec == std::errc())) {
+                        oa->write_characters(num_string.data(), ptr - begin);
+                    } else {
+
+                    }
+                } else {
+                    std::basic_stringstream<CharType> ss;
+                    ss << json.value_.num_uint;
+                    string_t num_string = ss.str();
+                    oa->write_characters(num_string.data(), num_string.size());
+                }
+                break;
+            }
+            case value_t::number_real: {
+                if constexpr (sizeof(CharType) == 1) {
+                    string_t num_string;
+                    if constexpr (sizeof(num_real_t) <= 4) {
+                        num_string.resize(32);
+                    } else if constexpr (sizeof(num_real_t) <= 8) {
+                        num_string.resize(64);
+                    } else {
+                        num_string.resize(128);
+                    }
+                    auto begin = (char*)num_string.data();
+                    auto end   = (char*)num_string.data() + num_string.size();
+                    auto [ptr, ec] = std::to_chars(begin, end, json.value_.num_real);
+                    if (JSON_LIKELY(ec == std::errc())) {
+                        oa->write_characters(num_string.data(), ptr - begin);
+                    } else {
+
+                    }
+                } else {
+                    std::basic_stringstream<CharType> ss;
+                    ss << json.value_.num_real;
+                    string_t num_string = ss.str();
+                    oa->write_characters(num_string.data(), num_string.size());
+                }
+                break;
+            }
+            case value_t::string: {
+                oa->write_character('\"');
+                oa->write_characters(json.value_.string->data(), json.value_.string->size());
+                oa->write_character('\"');
+            }
+            default:
+                break;
+        }
     }
 
 #undef write_literal_value
 
 private:
     output_adapter<CharType> oa = nullptr;
-    std::conditional_t<pretty, string_t, char> indent_string;
 };
 
 } // namespace json
