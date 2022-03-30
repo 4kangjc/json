@@ -5,7 +5,7 @@ project(jsoncc)
 
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS}\
     -rdynamic\
-    -O3\
+    -O0\
     -ggdb\
     -std=c++17\
     -Wall\
@@ -28,6 +28,8 @@ add_executable(test_read "tests/test_read.cc")
 
 add_executable(test_speed "tests/test_speed.cc")
 target_link_libraries(test_speed jsoncpp)
+
+add_executable(test_write "tests/test_write.cc")
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 # SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

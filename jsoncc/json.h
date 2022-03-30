@@ -12,6 +12,7 @@
 #include "marco.h"
 #include "meta.h"
 #include "reader.h"
+#include "writer.h"
 
 namespace json {
 
@@ -48,6 +49,9 @@ private:
 
     template<typename BasicJsonType>
     friend class json_sax_dom_parser;
+
+    template <typename BasicJsonType, bool , typename CharType>
+    friend class writer;
 public:
     using difference_type = std::ptrdiff_t;
     using value_type = basic_value;
@@ -123,7 +127,8 @@ public:
     constexpr bool is_string() const noexcept { return type_ == value_t::string; }
 
     bool as_boolean() const;
-    const char* as_cstring() const;
+    //const char* as_cstring() const;
+    const typename string_t::value_type* as_cstring() const;
     // char* as_cstring();     // is not const !!! can write
     string_t as_string() const;
     float as_float() const;
@@ -212,7 +217,7 @@ public:
         if (ok) {
             return result;
         }
-        JSON_LOG(reader.get_error_msg());
+        JSON_LOG("[ERROR]: \n" + reader.get_error_msg());
         return {};
     }
 
@@ -228,7 +233,7 @@ public:
         if (ok) {
             return result;
         }
-        JSON_LOG(reader.get_error_msg());
+        JSON_LOG("[ERROR]: \n" + reader.get_error_msg());
         return {};
     }
 
@@ -241,7 +246,7 @@ public:
                     if (first) {
                         first = false;
                     } else {
-                        os << ", ";
+                        os << ',';
                     }
                     value.dump(os);
                 }
@@ -255,9 +260,9 @@ public:
                     if (first) {
                         first = false;
                     } else {
-                        os << ", ";
+                        os << ',';
                     }
-                    os << '\"' << key << "\": ";
+                    os << '\"' << key << "\":";
                     value.dump(os);
                 }
                 os << '}';
@@ -295,6 +300,67 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const basic_value& json)  {
         return json.dump(os);
+    }
+
+    std::wostream& dump(std::wostream& os) const {
+        switch (type_) {
+            case value_t::array: {
+                os << L'[';
+                bool first = true;
+                for (const auto& value : *value_.array) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        os << L',';
+                    }
+                    value.dump(os);
+                }
+                os << L']';
+                break;
+            }
+            case value_t::object: {
+                os << L'{';
+                bool first = true;
+                for (const auto& [key, value] : *value_.object) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        os << L',';
+                    }
+                    os << L'\"' << key << L"\":";
+                    value.dump(os);
+                }
+                os << L'}';
+                break;
+            }
+            case value_t::null: {
+                os << L"null";
+                break;
+            }
+            case value_t::boolean: {
+                os << (value_.boolean ? L"true" : L"false");
+                break;
+            }
+            case value_t::number_int: {
+                os << as_int();
+                break;
+            }
+            case value_t::number_uint: {
+                os << as_uint();
+                break;
+            }
+            case value_t::number_real: {
+                os << as_real();
+                break;
+            }
+            case value_t::string: {
+                os << L'\"' << as_cstring() << L'\"';
+                break;
+            }
+            default:
+                break;
+        }
+        return os;
     }
     
 private:
@@ -569,7 +635,7 @@ bool BASIC_VALUE_TPL::as_boolean() const {
 }
 
 BASIC_VALUE_TPL_DECL
-const char* BASIC_VALUE_TPL::as_cstring() const {
+const typename BASIC_VALUE_TPL::string_t::value_type* BASIC_VALUE_TPL::as_cstring() const {
     if (JSON_LIKELY(is_string())) {
         // return value_.string->c_str();
         return value_.string->data();
@@ -589,24 +655,31 @@ const char* BASIC_VALUE_TPL::as_cstring() const {
 
 BASIC_VALUE_TPL_DECL
 typename BASIC_VALUE_TPL::string_t BASIC_VALUE_TPL::as_string() const {
-    switch (type_) {
-        case value_t::null:
-            return "null";
-        case value_t::boolean:
-            return value_.boolean ? "true" : "false";
-        case value_t::number_int:
-            return std::to_string(value_.num_int);
-        case value_t::number_uint:
-            return std::to_string(value_.num_uint);
-        case value_t::number_real:
-            return std::to_string(value_.num_real);
-        case value_t::string:
+    if constexpr (std::is_same_v<string_t, std::string>) {
+        switch (type_) {
+            case value_t::null:
+                return "null";
+            case value_t::boolean:
+                return value_.boolean ? "true" : "false";
+            case value_t::number_int:
+                return std::to_string(value_.num_int);
+                return string_t();
+            case value_t::number_uint:
+                return std::to_string(value_.num_uint);
+            case value_t::number_real:
+                return std::to_string(value_.num_real);
+            case value_t::string:
+                return *value_.string;
+            default:
+                break;
+        }
+    } else {
+        if (JSON_LIKELY(type_ == value_t::string)) {
             return *value_.string;
-        default:
-            break;
+        }
     }
     JSON_ERROR_MSG(false, "value can't convertible to string, type = " << type_name());
-    return "";
+    return string_t();
 }
 
 BASIC_VALUE_TPL_DECL
@@ -1031,6 +1104,7 @@ inline bool BASIC_VALUE_TPL::is() const noexcept {
             return is_object();
         } else {
             // TODO write a log
+            JSON_LOG("invalid type, can not use is");
             return false;
         }
     }

@@ -67,6 +67,7 @@ void print_json(BasicJsonType& json, int level) {
 }
 
 int main() {
+    std::cout << std::boolalpha;
     json::value root;
     root["array"].push_back(1);
     std::cout << root["array"].size() << std::endl;
@@ -90,7 +91,6 @@ int main() {
     std::cout << array.back().is<long double>() << std::endl;
     // root["array"] = nullptr;
     std::cout << root["array"].back().as<std::string>() << std::endl;
-    std::cout << std::is_same_v<bool, char> << std::endl;
     
 
     std::ifstream is("bin/conf/test2.json");

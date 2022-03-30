@@ -512,34 +512,67 @@ scan_number_done:
     }
 
     num_int_t get_number_integer() const noexcept {
-        char* end = nullptr;
-        if constexpr (sizeof(num_int_t) <= 4) {
-            return atoi(token_buffer.data());
-        } else if constexpr (sizeof(num_int_t) <= 8) {
-            return strtoll(token_buffer.data(), &end, 10);
+        if constexpr (sizeof(typename string_t::value_type) == 1) {
+            auto* begin = (const char*)token_buffer.data();
+            char* end = nullptr;
+            if constexpr (sizeof(num_int_t) <= 4) {
+                return atoi(begin);
+            } else if constexpr (sizeof(num_int_t) <= 8) {
+                return strtoll(begin, &end, 10);
+            } else {
+                return strtoll(begin, &end, 10);
+            }
         } else {
-            return strtoll(token_buffer.data(), &end, 10);
+            std::basic_stringstream<typename string_t::value_type> ss;
+            ss << token_buffer;
+            num_int_t result;
+            ss >> result;
+            return result;
+            error_message += "string_t::value_type sizeof is not 1, cannot convert string to integer\n";
         }
+        return 0;
     }
 
     num_uint_t get_number_unsigned() const noexcept {
-        char* end = nullptr;
-        if constexpr (sizeof(num_uint_t) <= 8) {
-            return strtoul(token_buffer.data(), &end, 10);
+        if constexpr (sizeof(typename string_t::value_type) == 1) {
+            auto* begin = (const char*)token_buffer.data();
+            char* end = nullptr;
+            if constexpr (sizeof(num_uint_t) <= 8) {
+                return strtoul(begin, &end, 10);
+            } else {
+                return strtoull(begin, &end, 10);
+            } 
         } else {
-            return strtoull(token_buffer.data(), &end, 10);
+            std::basic_stringstream<typename string_t::value_type> ss;
+            ss << token_buffer;
+            num_uint_t result;
+            ss >> result;
+            return result;
+            error_message += "string_t::value_type sizeof is not 1, cannot convert string to unsigned integer\n";
         }
+        return 0;
     }
 
     num_real_t get_number_real() const noexcept {
-        char* end = nullptr;
-        if constexpr (sizeof(num_real_t) <= 4) {
-            return strtof(token_buffer.data(), &end);
-        } else if constexpr (sizeof(num_real_t) <= 8) {
-            return strtod(token_buffer.data(), &end);
+        if constexpr (sizeof(typename string_t::value_type) == 1) {
+            auto* begin = (const char*)token_buffer.data();
+            char* end = nullptr;
+            if constexpr (sizeof(num_real_t) <= 4) {
+                return strtof(begin, &end);
+            } else if constexpr (sizeof(num_real_t) <= 8) {
+                return strtod(begin, &end);
+            } else {
+                return strtold(begin, &end);
+            } 
         } else {
-            return strtold(token_buffer.data(), &end);
+            std::basic_stringstream<typename string_t::value_type> ss;
+            ss << token_buffer;
+            num_real_t result;
+            ss >> result;
+            return result;
+            error_message += "string_t::value_type sizeof is not 1, cannot convert string to float\n";
         }
+        return 0; 
     }
 
     string_t& get_string() {
@@ -553,7 +586,7 @@ protected:
 
     char_int_type current = std::char_traits<char_type>::eof();
 
-    std::string error_message = "";
+    mutable std::string error_message = "";
     string_t token_buffer;
 
     bool next_unget = false;

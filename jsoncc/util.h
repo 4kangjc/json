@@ -32,8 +32,8 @@ void Backtrace(std::vector<std::string>& bt, int size = 64, int skip = 1) {
     auto array = (void**)malloc(size * sizeof(void*));
     size_t s = ::backtrace(array, size);
     char** strings = backtrace_symbols(array, s);
-    if (strings == NULL) {
-        // TODO LOG << "backtrace_symbols eroor";
+    if (strings == nullptr) {
+        // TODO LOG << "backtrace_symbols error";
         std::cout << __FILE__ << " : " << __LINE__ << " " << "backtrace_symbols error" << std::endl;
         return;
     }

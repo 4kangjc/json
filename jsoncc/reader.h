@@ -64,6 +64,9 @@ public:
                 lexer_t::error_message += "error token type, is not end of input\n";
                 return false;
             }
+            if (!lexer_t::error_message.empty()) {
+                JSON_LOG("[WARNING]: \n" + lexer_t::error_message);
+            }
             return true;
         }
     }
