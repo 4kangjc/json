@@ -75,10 +75,11 @@ public:
     using num_uint_t  = NumberUnsignedType;
     using num_real_t  = NumberRealType;
 
-    basic_value() = default;
+    basic_value(std::nullptr_t = nullptr) {}
     basic_value(value_t type);
 
-    template <typename T>
+    template <typename T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_floating_point_v<T> 
+                                                    || meta::is_string_v<T> || meta::is_cstring_v<T>>>
     basic_value(T&& v) {
         if constexpr (std::is_integral_v<T>) {
             if constexpr (std::is_same_v<T, boolean_t>) {
@@ -100,8 +101,6 @@ public:
         } else if constexpr (meta::is_cstring_v<T>) {
             value_.string = new string_t(v);
             type_ = value_t::string;
-        } else if constexpr (std::is_same_v<T, nullptr_t>) {
-            
         } else {
             // TODO LOG
             JSON_LOG("invalid type create basic_value\n");
@@ -111,6 +110,8 @@ public:
     basic_value(basic_value&& rhs) noexcept ;
     basic_value& operator=(basic_value&& rhs) noexcept ;
     basic_value& operator=(nullptr_t null) { destory(); return *this; }
+    basic_value(const basic_value& rhs);
+    basic_value& operator=(const basic_value& rhs);
 
     ~basic_value() { destory(); }
 
@@ -191,6 +192,8 @@ public:
 
     iterator begin() noexcept;
     iterator end() noexcept;
+    const_iterator begin() const noexcept;
+    const_iterator end() const noexcept;
     const_iterator cbegin() const noexcept;
     const_iterator cend() const noexcept;
     reverse_iterator rbegin() noexcept;
@@ -1013,6 +1016,20 @@ typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::begin() noexcept {
 BASIC_VALUE_TPL_DECL
 typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::end() noexcept {
     iterator result(this);
+    result.set_end();
+    return result;
+}
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::begin() const noexcept {
+    const_iterator result(this);
+    result.set_begin();
+    return result;
+}
+
+BASIC_VALUE_TPL_DECL
+typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::end() const noexcept {
+    const_iterator result(this);
     result.set_end();
     return result;
 }

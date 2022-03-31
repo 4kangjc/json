@@ -1,1 +1,24 @@
-true
+{
+    "servers": [
+        {
+            "address": ["0.0.0.0:8090", "127.0.0.1:8091"],
+            "keepalive": 1,
+            "timeout": -1,
+            "name": "flexy/1.1",
+            "accept_worker": "accept",
+            "io_worker": "io",
+            "process_worker": "io",
+            "type": "http"
+        },
+        {
+            "address": ["0.0.0.0:8072", "localhost:8071"],
+            "keepalive": 1,
+            "timeout": 600000,
+            "name": "flexy/2.1",
+            "accept_worker": "accept",
+            "io_worker": "io",
+            "process_worker": "io",
+            "type": "ws"
+        }
+    ]
+}

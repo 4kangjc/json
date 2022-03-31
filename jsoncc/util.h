@@ -28,7 +28,7 @@ static std::string damangle(const char* str) {
 }
 
 //获得函数调用堆栈信息
-void Backtrace(std::vector<std::string>& bt, int size = 64, int skip = 1) {
+static void Backtrace(std::vector<std::string>& bt, int size = 64, int skip = 1) {
     auto array = (void**)malloc(size * sizeof(void*));
     size_t s = ::backtrace(array, size);
     char** strings = backtrace_symbols(array, s);
@@ -45,7 +45,7 @@ void Backtrace(std::vector<std::string>& bt, int size = 64, int skip = 1) {
     free(array);
 }
 //获得函数调用堆栈信息字符串
-std::string BacktraceToString(int size = 64, int skip = 2, const std::string& prefix = "") {
+static std::string BacktraceToString(int size = 64, int skip = 2, const std::string& prefix = "") {
     std::vector<std::string> bt;
     Backtrace(bt, size, skip);
     std::stringstream ss;
