@@ -1,7 +1,7 @@
 {
     "sites": [
         {
-            "name": "\u83DC\u9E1F\u6559\u7A0B",
+            "name": "菜鸟教程",
             "url": "www.runoob.com"
         },
         {
@@ -9,7 +9,7 @@
             "url": "www.google.com"
         },
         {
-            "name": "\u5FAE\u535A",
+            "name": "微博",
             "url": "www.weibo.com"
         }
     ]

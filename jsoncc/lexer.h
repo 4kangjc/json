@@ -88,10 +88,55 @@ public:
     lexer& operator=(lexer&&) = delete;
     ~lexer() = default;
 
+protected:
     static char get_decimal_point() noexcept {
         const auto* loc = localeconv();
         JSON_ERROR(loc != nullptr);
         return (loc->decimal_point == nullptr) ? '.' : *(loc->decimal_point);
+    }
+
+    int get_codepoint() {
+        int codepoint = 0;
+        // for (int i = 0; i < 4; ++i) {
+        for (const auto factor : {12, 8, 4, 0} ) {
+            // codepoint *= 16;
+            get();
+            if (current >= '0' && current <= '9') {
+                codepoint += ((current - 0x30) << factor);
+                // codepoint += (current - '0');
+            } else if (current >= 'A' && current <= 'F') {
+                codepoint += ((current - 0x37) << factor);
+                // codepoint += current - 'A' + 10;
+            } else if (current >= 'a' && current <= 'f') {
+                codepoint += ((current - 0x57) << factor);
+                // codepoint += current - 'a' + 10;
+            } else {
+                return -1;
+            }
+        }
+        return codepoint;
+    }
+
+    void codepoint_to_utf8(int codepoint) {
+        if (codepoint <= 0x7f) {
+            // 0xxxxxxx
+            add(static_cast<char_int_type>(codepoint));
+        } else if (codepoint <= 0x7FF) {
+            // 110xxxxx 10xxxxxx
+            add(static_cast<char_int_type>(0xC0 | (codepoint >> 6)));
+            add(static_cast<char_int_type>(0x80 | (codepoint & 0x3f)));
+        } else if (codepoint <= 0xFFFF) {
+            // 1110xxxx 10xxxxx 10xxxxxx
+            add(static_cast<char_int_type>(0xE0 | (codepoint >> 12)));
+            add(static_cast<char_int_type>(0x80 | ((codepoint >> 6) & 0x3f)));
+            add(static_cast<char_int_type>(0x80 | (codepoint & 0x3f)));
+        } else {
+            // 11110xxx 10xxxxx 10xxxxxx 10xxxxxx
+            add(static_cast<char_int_type>(0xF0 | (codepoint >> 18)));
+            add(static_cast<char_int_type>(0x80 | ((codepoint >> 12) & 0x3f)));
+            add(static_cast<char_int_type>(0x80 | ((codepoint >> 6) & 0x3f)));
+            add(static_cast<char_int_type>(0x80 | (codepoint & 0x3f)));
+        }
     }
 
     void skip_whitespace() {
@@ -205,12 +250,47 @@ public:
                         case 't':
                             add('\t');
                             break;
-                        case 'u':
-                            // unsigned int unicode = 0u;
-                            //  TODO decode unicode
-                            // add(unicode);
-                            error_message += "unicode escapes\n";
-                            return token_type::parse_error;
+                        case 'u': {
+                            const int codepoint1 = get_codepoint();
+                            int codepoint = codepoint1;
+
+                            if (JSON_UNLIKELY(codepoint == -1)) {
+                                error_message += "invalid string: '\\u' must be followed by 4 hex digits\n";
+                                return token_type::parse_error;
+                            }
+
+                            // surrogate pair
+                            if (codepoint1 >= 0xD800 && codepoint1 <= 0xDBFF) {
+                                if (JSON_LIKELY(get() == '\\' && get() == 'u')) {
+                                    const int codepoint2 = get_codepoint();
+
+                                    if (JSON_UNLIKELY(codepoint2 == -1)) {
+                                        error_message += "invalid string: '\\u' must be followed by 4 hex digits\n";
+                                        return token_type::parse_error;
+                                    }
+                                    // codepoint = 0x10000 + (codepoint1 − 0xD800) × 0x400 + (codepoint2 − 0xDC00)
+                                    //           = 0x10000 + (codepoint1 << 10) - 0x3600000 - 0xDC00 + codepoint2
+                                    //           = (codepoint1 << 10) + codepoint2 - 0x35fdc00
+                                    if (JSON_LIKELY(codepoint2 >= 0xDC00 && codepoint2 <= 0xDFFF)) {
+                                        codepoint = (codepoint1 << 10) + codepoint2 - 0x35fdc00;
+                                    }
+                                }
+                            } else {
+                                if (JSON_UNLIKELY(codepoint1 >= 0xDC00 && codepoint1 <= 0xDFFF)) {
+                                    error_message += "invalid string: surrogate U+DC00..U+DFFF must follow U+D800..U+DBFF\n";
+                                    return token_type::parse_error;
+                                }
+                            }
+
+                            JSON_ERROR(codepoint >= 0x00 && codepoint <= 0x10FFFF);
+
+                            if constexpr (sizeof(typename string_t::value_type) > 1) {
+                                add(codepoint);
+                                break;
+                            }
+                            codepoint_to_utf8(codepoint);
+                            break;
+                        }
                         default:
                             error_message += "invalid string: forbidden character after backslash\n";
                             return token_type::parse_error;

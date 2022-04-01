@@ -368,7 +368,7 @@ public:
      
     template <bool pretty = false, typename CharType = typename string_t::value_type,
               typename Output, typename = std::enable_if_t<
-              std::is_convertible_v<Output, output_adapter<char>>>>
+              std::is_convertible_v<Output, output_adapter<CharType>>>>
     void write(Output&& op) const {
         json::writer<basic_value, pretty, CharType> writer(std::forward<Output>(op));
         writer.dump(*this);
