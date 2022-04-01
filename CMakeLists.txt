@@ -5,7 +5,7 @@ project(jsoncc)
 
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS}\
     -rdynamic\
-    -O0\
+    -O3\
     -ggdb\
     -std=c++17\
     -Wall\

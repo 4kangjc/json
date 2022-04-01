@@ -168,7 +168,22 @@ public:
     std::pair<iterator, bool> emplace(Args&&... args);
 
     template <class... Args>
+    iterator emplace_hint(const_iterator hint, Args&&... args);
+
+    template <class... Args>
     std::pair<basic_value::iterator, bool> try_emplace(Args&&... args);
+
+    template <class M>
+    std::pair<iterator, bool> insert_or_assign(const typename object_t::key_type& k, M&& obj);
+
+    template <class M>
+    std::pair<iterator, bool> insert_or_assign(typename object_t::key_type&& k, M&& obj);
+
+    template <class M>
+    iterator insert_or_assign(const_iterator hint, const typename object_t::key_type& k, M&& obj);
+
+    template <class M>
+    iterator insert_or_assign(const_iterator hint, typename object_t::key_type&& k, M&& obj);
 
     template <typename K>
     iterator find(K&& key);
@@ -446,6 +461,81 @@ std::pair<typename BASIC_VALUE_TPL::iterator, bool> BASIC_VALUE_TPL::try_emplace
     JSON_ERROR_MSG(false, "cannot use try_emplace() for non-object value");
 }
 
+BASIC_VALUE_TPL_DECL
+template <class... Args>
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::emplace_hint(const_iterator hint, Args&&... args) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (JSON_LIKELY(is_object())) {
+        auto iter = value_.object->emplace_hint(std::get<0>(hint.iter_), std::forward<Args>(args)...);
+        iterator it(this);
+        it.iter_ = iter;
+        return it;
+    }
+    JSON_ERROR_MSG(false, "cannot use emplace_hint() for non-object value");
+}
+
+BASIC_VALUE_TPL_DECL
+template <class M>
+std::pair<typename BASIC_VALUE_TPL::iterator, bool> BASIC_VALUE_TPL::insert_or_assign(const typename object_t::key_type& k, M&& obj) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (JSON_LIKELY(is_object())) {
+        auto [iter, ok] = value_.object->insert_or_assign(k, std::forward<M>(obj));
+        iterator it(this);
+        it.iter_ = iter;
+        return {it, ok};
+    }
+    JSON_ERROR_MSG(false, "cannot use insert_or_assign() for non-object value");
+}
+
+BASIC_VALUE_TPL_DECL
+template <class M>
+std::pair<typename BASIC_VALUE_TPL::iterator, bool> BASIC_VALUE_TPL::insert_or_assign(typename object_t::key_type&& k, M&& obj) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (JSON_LIKELY(is_object())) {
+        auto [iter, ok] = value_.object->insert_or_assign(std::move(k), std::forward<M>(obj));
+        iterator it(this);
+        it.iter_ = iter;
+        return {it, ok};
+    }
+    JSON_ERROR_MSG(false, "cannot use insert_or_assign() for non-object value");
+}
+
+BASIC_VALUE_TPL_DECL
+template <class M>
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::insert_or_assign(const_iterator hint, const typename object_t::key_type& k, M&& obj) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (JSON_LIKELY(is_object())) {
+        auto iter = value_.object->insert_or_assign(hint, k, std::forward<M>(obj));
+        iterator it(this);
+        it.iter_ = iter;
+        return it;
+    }
+    JSON_ERROR_MSG(false, "cannot use insert_or_assign() for non-object value");
+}
+
+BASIC_VALUE_TPL_DECL
+template <class M>
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::insert_or_assign(const_iterator hint, typename object_t::key_type&& k, M&& obj) {
+    if (is_null()) {
+        *this = basic_value(value_t::object);
+    }
+    if (JSON_LIKELY(is_object())) {
+        auto iter = value_.object->insert_or_assign(hint, std::move(k), std::forward<M>(obj));
+        iterator it(this);
+        it.iter_ = iter;
+        return it;
+    }
+    JSON_ERROR_MSG(false, "cannot use insert_or_assign() for non-object value");
+}
+
 #define __erase__(pos)                                                      \
     switch (type_) {                                                        \
         case value_t::object:                                               \
@@ -461,13 +551,13 @@ std::pair<typename BASIC_VALUE_TPL::iterator, bool> BASIC_VALUE_TPL::try_emplace
 
 
 BASIC_VALUE_TPL_DECL
-typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::iterator pos) {
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::erase(iterator pos) {
     iterator result(this);
     __erase__(pos);
 }
 
 BASIC_VALUE_TPL_DECL
-typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::const_iterator pos) {
+typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(const_iterator pos) {
     const_iterator result(this);
     __erase__(pos);
 }
@@ -488,13 +578,13 @@ typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(typename BASIC_V
     JSON_ERROR_MSG(false, "invalid type use erase, type = " << type_name())
 
 BASIC_VALUE_TPL_DECL
-typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::iterator begin, typename BASIC_VALUE_TPL::iterator end) {
+typename BASIC_VALUE_TPL::iterator BASIC_VALUE_TPL::erase(iterator begin, iterator end) {
     iterator result(this);
     __erase__(begin, end);
 }
 
 BASIC_VALUE_TPL_DECL
-typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(typename BASIC_VALUE_TPL::const_iterator begin, typename BASIC_VALUE_TPL::const_iterator end) {
+typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::erase(const_iterator begin, const_iterator end) {
     const_iterator result(this);
     __erase__(begin, end);
 }

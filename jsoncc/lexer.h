@@ -1,6 +1,7 @@
 #pragma once
 
 #include <clocale>
+#include <charconv>
 #include "marco.h"
 
 namespace json {
@@ -591,24 +592,45 @@ scan_number_done:
         return return_type;
     }
 
+    // from_chars: 
+    // "0x" or "0X" prefixes are not recognized if base is 16
+    // only the minus sign is recognized (not the plus sign), and only for signed integer types of value
+    // leading whitespace is not ignored.
+
     num_int_t get_number_integer() const noexcept {
         if constexpr (sizeof(typename string_t::value_type) == 1) {
             auto* begin = (const char*)token_buffer.data();
-            char* end = nullptr;
-            if constexpr (sizeof(num_int_t) <= 4) {
-                return atoi(begin);
-            } else if constexpr (sizeof(num_int_t) <= 8) {
-                return strtoll(begin, &end, 10);
-            } else {
-                return strtoll(begin, &end, 10);
+            // char* end = nullptr;
+            // if constexpr (sizeof(num_int_t) <= 4) {
+            //     return atoi(begin);
+            // } else if constexpr (sizeof(num_int_t) <= 8) {
+            //     return strtoll(begin, &end, 10);
+            // } else {
+            //     return strtoll(begin, &end, 10);
+            // }
+            auto* end   = (const char*)token_buffer.data() + token_buffer.size(); 
+            num_int_t result = 0;
+            auto [ptr, ec] = std::from_chars(begin, end, result);
+            JSON_ASSERT(ptr == end);
+            if (JSON_LIKELY(ec == std::errc())) {
+                return result;
+            } else if (ec == std::errc::result_out_of_range) {
+                error_message += "this number is larger than num_int_t, number = ";
+                error_message += token_buffer.data();
+                error_message += "\n";
             }
+            return 0;
         } else {
+            auto* end = token_buffer.data() + token_buffer.size();
             std::basic_stringstream<typename string_t::value_type> ss;
             ss << token_buffer;
             num_int_t result;
             ss >> result;
+            if (result % 10 != static_cast<num_int_t>(*--end - '0')) {
+                error_message += "this number is larger than num_int_t\n";
+                return 0;
+            }
             return result;
-            error_message += "string_t::value_type sizeof is not 1, cannot convert string to integer\n";
         }
         return 0;
     }
@@ -616,19 +638,35 @@ scan_number_done:
     num_uint_t get_number_unsigned() const noexcept {
         if constexpr (sizeof(typename string_t::value_type) == 1) {
             auto* begin = (const char*)token_buffer.data();
-            char* end = nullptr;
-            if constexpr (sizeof(num_uint_t) <= 8) {
-                return strtoul(begin, &end, 10);
-            } else {
-                return strtoull(begin, &end, 10);
-            } 
+            // char* end = nullptr;
+            // if constexpr (sizeof(num_uint_t) <= 8) {
+            //     return strtoul(begin, &end, 10);
+            // } else {
+            //     return strtoull(begin, &end, 10);
+            // } 
+            auto* end   = (const char*)token_buffer.data() + token_buffer.size();
+            num_uint_t result = 0;
+            auto [ptr, ec] = std::from_chars(begin, end, result);
+            JSON_ASSERT(ptr == end);
+            if (JSON_LIKELY(ec == std::errc())) {
+                return result;
+            } else if (ec == std::errc::result_out_of_range) {
+                error_message += "this number is larger than num_uint_t, number = ";
+                error_message += token_buffer.data();
+                error_message += "\n";
+            }
+            return 0;
         } else {
+            auto* end = token_buffer.data() + token_buffer.size();
             std::basic_stringstream<typename string_t::value_type> ss;
             ss << token_buffer;
-            num_uint_t result;
+            num_uint_t result = 0;
             ss >> result;
+            if (result % 10 != static_cast<num_uint_t>(*--end - '0')) {
+                error_message += "this number is larger than num_uint_t\n";
+                return 0;
+            }
             return result;
-            error_message += "string_t::value_type sizeof is not 1, cannot convert string to unsigned integer\n";
         }
         return 0;
     }
@@ -650,7 +688,6 @@ scan_number_done:
             num_real_t result;
             ss >> result;
             return result;
-            error_message += "string_t::value_type sizeof is not 1, cannot convert string to float\n";
         }
         return 0; 
     }
@@ -666,7 +703,7 @@ protected:
 
     char_int_type current = std::char_traits<char_type>::eof();
 
-    mutable std::string error_message = "";
+    mutable std::basic_string<char> error_message = "";
     string_t token_buffer;
 
     bool next_unget = false;

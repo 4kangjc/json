@@ -1,3 +1,23 @@
 {
-    "name": "\u4f60\u597D, \u4e16\u754c"
+    "name": "\u4f60\u597D, \u4e16\u754c",
+    "test": [
+        {
+            "id": 1,
+            "username": "zhangshan",
+            "password": "123qwe",
+            "lock": false
+        },
+        {
+            "id": 2,
+            "username": "lisi",
+            "password": "123qwe",
+            "lock": false
+        },
+        {
+            "id": 3,
+            "username": "wangwu",
+            "password": "123qwe",
+            "lock": false
+        }
+    ]
 }

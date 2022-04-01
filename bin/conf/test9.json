@@ -1,16 +1,9 @@
 {
-    "sites": [
-        {
-            "name": "菜鸟教程",
-            "url": "www.runoob.com"
-        },
-        {
-            "name": "google",
-            "url": "www.google.com"
-        },
-        {
-            "name": "微博",
-            "url": "www.weibo.com"
-        }
-    ]
+    "workbench.colorTheme": "Monokai Pro (Filter Spectrum)",
+    "editor.bracketPairColorization.enabled": true,
+    "vim.useCtrlKeys": false,
+    "editor.fontFamily": "hack 'Droid Sans Mono', 'monospace', monospace",
+    "files.autoSave": "afterDelay",
+    "workbench.iconTheme": "Monokai Pro (Filter Spectrum) Icons",
+    "C_Cpp.default.cppStandard": "c++20"
 }

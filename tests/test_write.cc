@@ -5,7 +5,7 @@ namespace json {
     using my_value = json::basic_value<std::map, std::vector, std::wstring>;
 };
 
-int main() {
+int main1() {
     std::ios_base::sync_with_stdio(false); 
     std::wcout.imbue(std::locale("zh_CN.UTF-8"));
     // std::vector<char> v;
@@ -48,18 +48,21 @@ int main() {
     return 0;
 }
 
-int main2() {
+int main() {
     for (int i = 1; i <= 6; ++i) {
         std::string file = "bin/conf/test" + std::to_string(i) + ".json";
         std::ifstream is(file);
-        auto json_ptr = json::value::parse(is);
+        auto json_ptr = json::value::parse<true>(is);
 
+        if (!json_ptr) {
+            continue;
+        }
         std::string out_file = "bin/conf/temp" + std::to_string(i) + ".json";  
         std::ofstream os(out_file);
         // json::writer<json::value, true> writer(os);
         // writer.dump(*json_ptr);
-        json_ptr->write<true>(json::output_adapter<char>(os));
-        // json_ptr->write<true>(os);
+        // json_ptr->write<true>(json::output_adapter<char>(os));
+        json_ptr->write<true>(os);
     }
     return 0;
 }
