@@ -36,7 +36,7 @@ int main() {
     object["type"] = "file";
     object.emplace("level", "debug");
     if (auto [lit, ok] = object.try_emplace("level", "info"); !ok) {
-        std::cout << "try_emplace fail, key exsit" << std::endl;
+        std::cout << "try_emplace fail, key exists" << std::endl;
     }
 
     if (auto [lit, ok] = object.insert_or_assign("level", "warning"); !ok) {
@@ -97,5 +97,5 @@ Timer took 3.73444e+10ms            <-- jsoncc [this project]
 ```
 
 ## 参考
-1. [nlohmann json](https://github.com/nlohmann/json)
-2. [jsoncpp](https://github.com/open-source-parsers/jsoncpp)
+* [nlohmann json](https://github.com/nlohmann/json)
+* [jsoncpp](https://github.com/open-source-parsers/jsoncpp)
