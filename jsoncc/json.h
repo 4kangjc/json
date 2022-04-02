@@ -1224,8 +1224,8 @@ inline bool BASIC_VALUE_TPL::is() const noexcept {
     }
 }
 
-// using value = basic_value<>;
-using value = basic_value<std::map, std::vector, std::string, bool, int, uint, float, std::allocator>;
+using value = basic_value<>;
+// using value = basic_value<std::map, std::vector, std::string, bool, int, uint, float, std::allocator>;
 
 #undef BASIC_VALUE_TPL
 #undef BASIC_VALUE_TPL_DECL
