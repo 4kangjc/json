@@ -1,6 +1,5 @@
 #include "jsoncc/meta.h"
 #include <iostream>
-#include <map>
 
 int main() {
     std::cout << std::boolalpha;

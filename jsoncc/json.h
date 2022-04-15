@@ -191,6 +191,9 @@ public:
     template <typename K>
     const_iterator find(K&& key) const;
 
+    template <typename K>
+    bool contains(K&& key) const; 
+
     iterator erase(iterator pos);
     const_iterator erase(const_iterator pos);
     iterator erase(iterator begin, iterator end);
@@ -622,6 +625,15 @@ typename BASIC_VALUE_TPL::const_iterator BASIC_VALUE_TPL::find(K&& key) const {
         return it;
     }
     JSON_ERROR_MSG(false, "cannot use find() for non-object value");
+}
+
+BASIC_VALUE_TPL_DECL
+template <typename K>
+bool BASIC_VALUE_TPL::contains(K&& key) const {
+    if (JSON_LIKELY(is_object())) {
+        return value_.object->find(std::forward<K>(key)) != value_.object->end();
+    }
+    JSON_ERROR_MSG(false, "cannot use contains() for non-object value");
 }
 
 BASIC_VALUE_TPL_DECL

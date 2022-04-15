@@ -68,7 +68,7 @@ int main() {
         map.erase(iter);
     }
 
-    if (!map.count("three")) {
+    if (!map.contains("three")) {
         std::cout << "erase three success!\n";
     }
 }
